@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Smart Garden | Duong IoT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Import Google font - Open Sans */
+        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        body {
+            background: #E3F2FD;
+        }
+
+        h1 {
+            background: #5372F0;
+            font-size: 1.75rem;
+            text-align: center;
+            padding: 18px 0;
+            color: #fff;
+        }
+
+        .container {
+            display: flex;
+            gap: 35px;
+            padding: 30px;
+        }
+
+        .weather-input {
+            width: 550px;
+        }
+
+        .weather-input input {
+            height: 46px;
+            width: 100%;
+            outline: none;
+            font-size: 1.07rem;
+            padding: 0 17px;
+            margin: 10px 0 20px 0;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        .weather-input input:focus {
+            padding: 0 16px;
+            border: 2px solid #5372F0;
+        }
+
+        .weather-input .separator {
+            height: 1px;
+            width: 100%;
+            margin: 25px 0;
+            background: #BBBBBB;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .weather-input .separator::before {
+            /* content: "or"; */
+            color: #6C757D;
+            font-size: 1.18rem;
+            padding: 0 15px;
+            margin-top: -4px;
+            background: #E3F2FD;
+        }
+
+        .weather-input button {
+            width: 100%;
+            padding: 10px 0;
+            cursor: pointer;
+            outline: none;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            color: #fff;
+            background: #5372F0;
+            transition: 0.2s ease;
+        }
+
+        .weather-input .search-btn:hover {
+            background: #2c52ed;
+        }
+
+        .weather-input .location-btn {
+            background: #6C757D;
+        }
+
+        .weather-input .location-btn:hover {
+            background: #5c636a;
+        }
+
+        .weather-data {
+            width: 100%;
+        }
+
+        .weather-data .current-weather {
+            color: #fff;
+            background: #5372F0;
+            border-radius: 5px;
+            padding: 20px 70px 20px 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .current-weather h2 {
+            font-weight: 700;
+            font-size: 1.7rem;
+        }
+
+        .weather-data h6 {
+            margin-top: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .current-weather .icon {
+            text-align: center;
+        }
+
+        .current-weather .icon img {
+            max-width: 120px;
+            margin-top: -15px;
+        }
+
+        .current-weather .icon h6 {
+            margin-top: -10px;
+            text-transform: capitalize;
+        }
+
+        .days-forecast h2 {
+            margin: 20px 0;
+            font-size: 1.5rem;
+        }
+
+        .days-forecast .weather-cards {
+            display: flex;
+            gap: 20px;
+        }
+
+        .weather-cards .card {
+            color: #fff;
+            padding: 18px 16px;
+            list-style: none;
+            width: calc(100% / 5);
+            background: #6C757D;
+            border-radius: 5px;
+        }
+
+        .weather-cards .card h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .weather-cards .card img {
+            max-width: 70px;
+            margin: 5px 0 -12px 0;
+        }
+
+        @media (max-width: 1400px) {
+            .weather-data .current-weather {
+                padding: 20px;
+            }
+
+            .weather-cards {
+                flex-wrap: wrap;
+            }
+
+            .weather-cards .card {
+                width: calc(100% / 4 - 15px);
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .weather-cards .card {
+                width: calc(100% / 3 - 15px);
+            }
+        }
+
+        @media (max-width: 950px) {
+            .weather-input {
+                width: 450px;
+            }
+
+            .weather-cards .card {
+                width: calc(100% / 2 - 10px);
+            }
+        }
+
+        @media (max-width: 750px) {
+            h1 {
+                font-size: 1.45rem;
+                padding: 16px 0;
+            }
+
+            .container {
+                flex-wrap: wrap;
+                padding: 15px;
+            }
+
+            .weather-input {
+                width: 100%;
+            }
+
+            .weather-data h2 {
+                font-size: 1.35rem;
+            }
+        }
+
+        .chart-container {
+            width: 100%;
+            display: flex;
+        }
+
+        .chart-container canvas {
+            width: 50%;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>VƯỜN THÔNG MINH</h1>
+    <div class="container">
+        <div class="weather-input">
+            <h3 style="text-align: center;" id="datetime"></h3>
+            <input class="city-input" type="text" style="height: 0px;" placeholder="Thông báo . . .">
+            <!-- <button style="height: 60px;" onclick="auto_on()">AUTO: ON</button>
+            <button style="height: 60px;" onclick="auto_off()">AUTO: OFF</button> -->
+            <button style="background-color: red; height: 68px" id="button_auto" onclick="auto()">AUTO: <span
+                    id="status">OFF</span></button>
+            <div class="separator"></div>
+            <div style="display: flex; justify-content: space-between;">
+                <button style="width: 48%; height: 68px;" onclick="on()">Bật đèn</button>
+                <button style="width: 48%; height: 68px;" onclick="off()">Tắt đèn</button>
+            </div>
+            <div class="separator"></div>
+            <div style="display: flex; justify-content: space-between;">
+                <button class="disableds" style="width: 48%; height: 68px;" onclick="pump_on()">Bật máy bơm</button>
+                <button class="disableds" style="width: 48%; height: 68px;" onclick="pump_off()">Tắt máy bơm</button>
+            </div>
+            <div class="separator"></div>
+            <button style="height: 60px;" onclick="dudoan()">Dự đoán loại rau bạn nên trồng</button>
+            <div style="width: 100%; padding-top: 30px;">
+                <img id="imgdudoan" width="100%"
+                    src="https://datascientest.com/en/wp-content/uploads/sites/9/2021/01/Machine-learning-def-.png"
+                    alt="">
+            </div>
+        </div>
+        <div class="weather-data">
+            <div class="current-weather">
+                <div class="details">
+                    <!-- <h2>ESP8266</h2>
+            <h6>Nhiệt độ: <span id="temperature">__</span>°C</h6>
+            <h6>Độ ẩm không khí: <span id="humidity">__</span>%</h6>
+            <h6>Độ ẩm đất: <span id="soilMoisture">__</span>%</h6> -->
+                </div>
+            </div>
+            <div class="days-forecast">
+                <h2>Dự báo 5 ngày sau</h2>
+                <ul class="weather-cards">
+                    <li class="card">
+                        <h3>( ______ )</h3>
+                        <h6>Nhiệt độ: __C</h6>
+                        <h6>Wind: __ M/S</h6>
+                        <h6>Humidity: __%</h6>
+                    </li>
+                    <li class="card">
+                        <h3>( ______ )</h3>
+                        <h6>Nhiệt độ: __C</h6>
+                        <h6>Wind: __ M/S</h6>
+                        <h6>Humidity: __%</h6>
+                    </li>
+                    <li class="card">
+                        <h3>( ______ )</h3>
+                        <h6>Nhiệt độ: __C</h6>
+                        <h6>Wind: __ M/S</h6>
+                        <h6>Humidity: __%</h6>
+                    </li>
+                    <li class="card">
+                        <h3>( ______ )</h3>
+                        <h6>Nhiệt độ: __C</h6>
+                        <h6>Wind: __ M/S</h6>
+                        <h6>Humidity: __%</h6>
+                    </li>
+                    <li class="card">
+                        <h3>( ______ )</h3>
+                        <h6>Nhiệt độ: __C</h6>
+                        <h6>Wind: __ M/S</h6>
+                        <h6>Humidity: __%</h6>
+                    </li>
+                </ul>
+            </div>
+            <div class="chart-container">
+                <div style="width: 50%;">
+                    <canvas id="lineChart"></canvas>
+                </div>
+                <div style="width: 50%;">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script>
+    const cityInput = document.querySelector(".city-input");
+    // const searchButton = document.querySelector(".search-btn");
+    // const locationButton = document.querySelector(".location-btn");
+    const currentWeatherDiv = document.querySelector(".current-weather");
+    const weatherCardsDiv = document.querySelector(".weather-cards");
+
+    const API_KEY = "9db2bcbd9e186f1a3a8de6ab36438354"; // API key for OpenWeatherMap API
+
+    const createWeatherCard = (cityName, weatherItem, index) => {
+        if (index === 0) { // HTML for the main weather card
+            return `<div class="details">
+                             <h2>ESP8266</h2>
+                             <h6>Nhiệt độ: <span id="temperature">__</span>°C</h6>
+                             <h6>Độ ẩm không khí: <span id="humidity">__</span>%</h6>
+                             <h6>Độ ẩm đất: <span id="soilMoisture">__</span>%</h6>
+                        </div>
+                        <div class="icon">
+                            <img src="https://openweathermap.org/img/wn/${weatherItem.weather[0].icon}@4x.png" alt="weather-icon">
+                            <h6>TODAY</h6>
+                        </div>`;
+        } else { // HTML for the other five day forecast card
+            return `<li class="card" >
+                            <h3 style="text-align: center;">${weatherItem.dt_txt.split(" ")[0]}</h3>
+                            <div style="display: flex; justify-content: center;"><img src="https://openweathermap.org/img/wn/${weatherItem.weather[0].icon}@4x.png" alt="weather-icon"></div>
+                            <h6>Nhiệt độ: ${(weatherItem.main.temp - 273.15).toFixed(2)}°C</h6>
+                            <h6>Gió: ${weatherItem.wind.speed} M/S</h6>
+                            <h6>Độ ẩm: ${weatherItem.main.humidity}%</h6>
+                        </li>`;
+        }
+    }
+
+    const getWeatherDetails = (cityName, latitude, longitude) => {
+        const WEATHER_API_URL = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${API_KEY}`;
+
+        fetch(WEATHER_API_URL).then(response => response.json()).then(data => {
+            // Filter the forecasts to get only one forecast per day
+            const uniqueForecastDays = [];
+            const fiveDaysForecast = data.list.filter(forecast => {
+                const forecastDate = new Date(forecast.dt_txt).getDate();
+                if (!uniqueForecastDays.includes(forecastDate)) {
+                    return uniqueForecastDays.push(forecastDate);
+                }
+            });
+
+            // Clearing previous weather data
+            cityInput.value = "";
+            currentWeatherDiv.innerHTML = "";
+            weatherCardsDiv.innerHTML = "";
+
+            // Creating weather cards and adding them to the DOM
+            fiveDaysForecast.forEach((weatherItem, index) => {
+                const html = createWeatherCard(cityName, weatherItem, index);
+                if (index === 0) {
+                    currentWeatherDiv.insertAdjacentHTML("beforeend", html);
+                } else {
+                    weatherCardsDiv.insertAdjacentHTML("beforeend", html);
+                }
+            });
+        }).catch(() => {
+            alert("An error occurred while fetching the weather forecast!");
+        });
+    }
+
+    const getCityCoordinates = () => {
+        // const cityName = cityInput.value.trim();
+        const cityName = "hanoi"
+        if (cityName === "") return;
+        const API_URL = `https://api.openweathermap.org/geo/1.0/direct?q=${cityName}&limit=1&appid=${API_KEY}`;
+
+        // Get entered city coordinates (latitude, longitude, and name) from the API response
+        fetch(API_URL).then(response => response.json()).then(data => {
+            if (!data.length) return alert(`No coordinates found for ${cityName}`);
+            const { lat, lon, name } = data[0];
+            getWeatherDetails(name, lat, lon);
+        }).catch(() => {
+            alert("An error occurred while fetching the coordinates!");
+        });
+    }
+
+    // const getUserCoordinates = () => {
+    //     navigator.geolocation.getCurrentPosition(
+    //         position => {
+    //             const { latitude, longitude } = position.coords; // Get coordinates of user location
+    //             // Get city name from coordinates using reverse geocoding API
+    //             const API_URL = `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${API_KEY}`;
+    //             fetch(API_URL).then(response => response.json()).then(data => {
+    //                 const { name } = data[0];
+    //                 getWeatherDetails(name, latitude, longitude);
+    //             }).catch(() => {
+    //                 alert("An error occurred while fetching the city name!");
+    //             });
+    //         },
+    //         error => { // Show alert if user denied the location permission
+    //             if (error.code === error.PERMISSION_DENIED) {
+    //                 alert("Geolocation request denied. Please reset location permission to grant access again.");
+    //             } else {
+    //                 alert("Geolocation request error. Please reset location permission.");
+    //             }
+    //         });
+    // }
+    getCityCoordinates()
+    // locationButton.addEventListener("click", getUserCoordinates);
+    // searchButton.addEventListener("click", getCityCoordinates);
+    // cityInput.addEventListener("keyup", e => e.key === "Enter" && getCityCoordinates());
+
+
+    // Kết nối tới máy chủ WebSocket
+    var socket = new WebSocket("ws://192.168.228.56:81");
+
+    // Xử lý khi kết nối thành công
+    socket.onopen = function (event) {
+        console.log("Connected to server");
+    };
+
+
+    //Biểu đồ
+    var lineData = {
+        labels: [],
+        datasets: [
+            {
+                label: 'Nhiệt độ',
+                data: [],
+                borderColor: 'red',
+                fill: false
+            },
+            {
+                label: 'Độ ẩm không khí',
+                data: [],
+                borderColor: 'green',
+                fill: false
+            },
+            {
+                label: 'Độ ẩm đất',
+                data: [],
+                borderColor: 'blue',
+                fill: false
+            }
+        ]
+    };
+
+    var barData = {
+        labels: [],
+        datasets: [
+            {
+                label: 'Nhiệt độ',
+                data: [],
+                backgroundColor: 'red'
+            },
+            {
+                label: 'Độ ẩm không khí',
+                data: [],
+                backgroundColor: 'green'
+            },
+            {
+                label: 'Độ ẩm đất',
+                data: [],
+                backgroundColor: 'blue'
+            }
+        ]
+    };
+
+    var options = {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    };
+
+    var lineCtx = document.getElementById('lineChart').getContext('2d');
+    var lineChart = new Chart(lineCtx, {
+        type: 'line',
+        data: lineData,
+        options: options
+    });
+
+    var barCtx = document.getElementById('barChart').getContext('2d');
+    var barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: barData,
+        options: options
+    });
+
+    // Xử lý khi nhận dữ liệu từ máy chủ
+    socket.onmessage = function (event) {
+        // Lấy tất cả các nút có class "disableds"
+        var disabledButtons = document.querySelectorAll('.disableds');
+        if (event.data == "Auto on") {
+            document.getElementById('status').textContent = "ON"
+            document.getElementById('button_auto').style.backgroundColor = "#5372F0"
+
+            // Đặt màu nền của các nút thành màu xám
+            for (var i = 0; i < disabledButtons.length; i++) {
+                disabledButtons[i].style.backgroundColor = '#6C757D'
+                disabledButtons[i].style.cursor = 'not-allowed';
+                disabledButtons[i].disabled = true
+            }
+        }
+        else if (event.data == "Auto off") {
+            document.getElementById('status').textContent = "OFF"
+            document.getElementById('button_auto').style.backgroundColor = "red"
+
+            // Đặt màu nền của các nút thành màu xanh
+            for (var i = 0; i < disabledButtons.length; i++) {
+                disabledButtons[i].style.backgroundColor = '#5372F0'
+                disabledButtons[i].style.cursor = 'auto';
+                disabledButtons[i].disabled = false
+            }
+        }
+
+        var data = event.data.split(",");
+        var temperature = data[0];
+        var humidity = data[1];
+        var soilMoisture = data[2];
+
+        // Cập nhật dữ liệu lên giao diện
+        if (data.length == 3) {
+            $("#temperature").text(temperature);
+            $("#humidity").text(humidity);
+            $("#soilMoisture").text(soilMoisture);
+            // Dữ liệu cần gửi
+            // var data_to_send = '{"temperature":' + temperature + ', "humidity":' + humidity + ' , "soilMoisture":' + soilMoisture + '}';
+
+            // Dữ liệu cần gửi với các giá trị đã cho
+            if (data[0] != "nan") {
+                var data_to_send = {
+                    "temperature": temperature,
+                    "humidity": humidity,
+                    "soilMoisture": soilMoisture
+                };
+                // Gửi dữ liệu đến server sử dụng AJAX
+                $.ajax({
+                    type: 'POST',
+                    data: {
+                        'temperature': temperature,
+                        'humidity': humidity,
+                        'soilMoisture': soilMoisture
+                    },
+                    url: '/savedata',
+                    success: function (response) {
+                        // Xử lý phản hồi từ server
+                        console.log(response);
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            }
+        }
+
+        // Cập nhật dữ liệu vào biểu đồ
+        var currentTime = new Date().toLocaleTimeString(); // Thời gian hiện tại
+
+        lineChart.data.labels.push(currentTime); // Thêm nhãn thời gian
+        lineChart.data.datasets[0].data.push(temperature); // Thêm nhiệt độ mới
+        lineChart.data.datasets[1].data.push(humidity); // Thêm độ ẩm không khí mới
+        lineChart.data.datasets[2].data.push(soilMoisture); // Thêm độ ẩm đất mới
+
+        barChart.data.labels.push(currentTime); // Thêm nhãn thời gian
+        barChart.data.datasets[0].data.push(temperature); // Thêm nhiệt độ mới
+        barChart.data.datasets[1].data.push(humidity); // Thêm độ ẩm không khí mới
+        barChart.data.datasets[2].data.push(soilMoisture); // Thêm độ ẩm đất mới
+
+        // Giới hạn số lượng dữ liệu hiển thị
+        var maxDataPoints = 10;
+        if (lineChart.data.labels.length > maxDataPoints) {
+            lineChart.data.labels.shift(); // Xóa nhãn cũ nhất
+            lineChart.data.datasets.forEach(function (dataset) {
+                dataset.data.shift(); // Xóa dữ liệu cũ nhất
+            });
+        }
+
+        if (barChart.data.labels.length > maxDataPoints) {
+            barChart.data.labels.shift(); // Xóa nhãn cũ nhất
+            barChart.data.datasets.forEach(function (dataset) {
+                dataset.data.shift(); // Xóa dữ liệu cũ nhất
+            });
+        }
+
+        lineChart.update(); // Cập nhật biểu đồ đường
+        barChart.update(); // Cập nhật biểu đồ cột
+    }
+
+
+    //     $.ajax({
+    //         type: 'POST',
+    //         contentType: 'application/json;charset=UTF-8',
+    //         data: JSON.stringify(data_to_send),
+    //         url: '/savedata',
+    //         success: function (response) {
+    //             // Xử lý phản hồi từ server
+    //             console.log(response.message);
+    //         },
+    //         error: function (error) {
+    //             console.log(error);
+    //         }
+    //     });
+    // };
+    // //day data vao db
+    // // Gửi dữ liệu đến server sử dụng AJAX
+
+
+
+    // Gửi yêu cầu bật/tắt chế độ tự động tưới nước
+    function auto_on() {
+        socket.send("auto_on");
+    }
+    function auto_off() {
+        socket.send("auto_off");
+    }
+
+    function auto() {
+        var status_on_off = document.getElementById('status')
+        var button = document.getElementById('button_auto')
+        if (status_on_off.textContent == "OFF") {
+            auto_on()
+            status_on_off.innerText = "ON"
+            // button.style.backgroundColor = "#5372F0"
+        } else {
+            auto_off()
+            status_on_off.innerText = "OFF"
+            // button.style.backgroundColor = "red"
+        }
+    }
+
+
+    // Gửi yêu cầu bật/tắt đèn
+    function on() {
+        socket.send("on");
+    }
+    function off() {
+        socket.send("off");
+    }
+
+    function pump_on() {
+        socket.send("pump_on");
+    }
+    function pump_off() {
+        socket.send("pump_off");
+    }
+
+    function displayDateTime() {
+        var currentDate = new Date();
+        var year = currentDate.getFullYear();
+        var month = (currentDate.getMonth() + 1).toString().padStart(2, "0");
+        var day = currentDate.getDate().toString().padStart(2, "0");
+        var hours = currentDate.getHours().toString().padStart(2, "0");
+        var minutes = currentDate.getMinutes().toString().padStart(2, "0");
+        var seconds = currentDate.getSeconds().toString().padStart(2, "0");
+
+        var formattedDateTime =
+            day +
+            "/" +
+            month +
+            "/" +
+            year +
+            " " +
+            hours +
+            ":" +
+            minutes +
+            ":" +
+            seconds;
+
+        document.getElementById("datetime").innerHTML = formattedDateTime;
+    }
+
+    setInterval(displayDateTime, 1000);
+
+
+
+    function dudoan() {
+        // var nhan = "";
+        // console.log("Button du doan clicked!");
+        // var imgdudoan = document.getElementById('imgdudoan');
+        // Gửi dữ liệu đến server sử dụng AJAX
+        $.ajax({
+            type: 'GET',
+            data: {
+            },
+            url: '/dudoan',
+            success: function (response) {
+                // Xử lý phản hồi từ server
+                // console.log(response)
+                // nhan = response
+                // imgdudoan.src = "https://dacsancamvinh.net/wp-content/uploads/2015/06/cong-dung-qua-cam.jpg";
+
+                var image = document.getElementById("imgdudoan");
+
+                var caixoan = "https://sgeviet.vn/wp-content/uploads/2022/02/cai-xoan-Curly-Kale.jpg"
+                var raumui = "https://cdn.tgdd.vn/2021/01/CookProduct/Cilando-rau-mui-la-gi-cong-dung-va-cach-phan-biet-voi-rau-mui-tay-1-1200x676.jpg"
+                var rauram = "https://vinmec-prod.s3.amazonaws.com/images/20201120_101845_819083_tac-dung-cua-rau-ra.max-1800x1800.jpg"
+                var raungot = "https://cdn.tgdd.vn/2022/09/CookDishThumb/cach-nhat-rau-ngot-nhanh-chong-khong-dau-tay-cuc-ky-don-gian-thumb-620x620.jpg"
+                var loadingImageSrc = "https://cdn.dribbble.com/users/1783374/screenshots/10100442/cute-loading.gif";
+
+                image.src = loadingImageSrc;
+
+                setTimeout(function () {
+                    if (response == "Cải Xoăn") {
+                        image.src = caixoan;
+                    } else if (response == "Rau Mùi") {
+                        image.src = raumui;
+                    } else if (response == "Rau Ngót") {
+                        image.src = raungot;
+                    } else {
+                        image.src = caixoan;
+                    }
+                }, 5000);
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    }
+
+</script>
+
+</html>
